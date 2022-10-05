@@ -3,14 +3,17 @@ import numpy as np
 import config
 
 def get_markets():
-    client = ExchangeClient("https://demo-api.kalshi.co", config.email, config.password)
+    client = ExchangeClient("https://trading-api.kalshi.com", config.email, 
+config.password)
 
     events = client.get_events_cached()
     events = events["events"]
     
     processed_markets = []
     for event in events:
-        markets = [m for m in event["markets"] if m["status"] == "open"]
+        if (all([(m["status"] != "active") for m in event["markets"]])):
+            continue
+        markets = [m for m in event["markets"] if m["status"] == "active"]
         contracts_prices = [(1 - market["yes_bid"]/100) for market in markets]
         
         new_market = {
@@ -26,7 +29,7 @@ def check_arb(markets):
     # A market is arb-able if min(profit_1, profit_2, ...) > 0
     for market in markets:
         if not market["mutually_exclusive"]:
-            print(f'{ market["name"] } is not mutually exclusive.')
+            # print(f'{ market["name"] } is not mutually exclusive.')
             continue
         
         contracts_prices = market["contracts_prices"]
